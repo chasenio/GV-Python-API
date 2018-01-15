@@ -1,30 +1,7 @@
-# GV Python API
+#!/usr/bin/env python
+# -* coding: utf-8 -*
+# create by cvno on 2018/1/15 11:52
 
-使用 Python3 来操作 Google Voice 的 API。[English](/en)（未完成）
-
-功能列表:
-
-- 发送 SMS
-- 拨打电话
-- 取消拨打电话
-- 标记为已读或未读
-- 下载语音留言
-- 后台自动检测是否有新信息
-- 根据 SMS 的设置自动回复
-
-
-它也可能是一个廉价的短信验证码方法，目前国内至少有两家大型的互联网公司使用这种方案。
-
-**依赖模块:**
-
-- `pip install selenium`
-- `pip install requests`
-- `pip install BeautifulSoup`
-- `PhantomJS` 一款无界面模拟浏览器, 不同的操作系统安装方法有差异
-
-# 使用
-
-```python
 import GoogleVoice
 
 
@@ -50,11 +27,11 @@ while not voice.status['init']:
     continue
 
 # 发送 sms
-res1 = voice.send_sms('+18566712333', 'Hello World!')
+res1 = voice.send_sms('6128880182', 'Hello World!')
 # {"ok":true,"data":{"code":0}}
 
 # 拨打电话
-res2 = voice.call('+18566712333')
+res2 = voice.call('6128880182')
 # {"ok":true,"data":{"code":0,"callId":"XXXXXXXXX...."}}
 
 # 取消拨打
@@ -70,17 +47,3 @@ for i in voice.unsms:  # 这个方法返回的是一个 list
 for i in voice.voicemail:  # 这个方法返回的是一个 list
     print(i['ogg_url'])  # 语音下载地址
     res6 = voice.mark(i['id'])  # 标记为已读
-```
-
-***注意：***
-1. Google Voice 是使用 C2C 模式拨打电话的，也就是说需要转接号码，如果你账号已经绑定了号码，那么程序会自动处理。
-2. 获取新消息处理之后，建议直接删除，或备份到数据库；如果不删除会影响新消息的数据处理。
-
-# 声明
-如果 Google 更改登录机制，或弃用旧版，本代码可能会不支持，如果你下载此代码，代表您同意自行承担使用风险。
-
-# 许可
-by [Git @cvno](https://github.com/cvno/) [cvno.me](https:blog.cvno.me)
-
-See LICENSE
-
