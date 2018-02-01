@@ -102,3 +102,9 @@ ENV/
 
 # PyCharm
 .idea/
+
+# img .png
+img/*.png
+
+# test py file
+test.py
