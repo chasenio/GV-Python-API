@@ -12,6 +12,7 @@ import requests
 import threading
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
+from selenium import webdriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -82,15 +83,15 @@ class Voice(Singleton):
     __cookie = {}
     __intervals = 3
     __driver = None
-    __gc_data = None
+    _gc_data = None
     __try_time = 2
-    __match = {}
+    _match = {}
 
     def __init__(self, email, passwd, debug=True):
         self.__email = email
         self.__passwd = passwd
         self.debug = debug
-        self.__gc_data_name = '_gcData'
+        self._gc_data_name = '_gcData'
         self.__browser_name = 'PhantomJS'  # 默认
         self.__module = 'selenium.webdriver'
 
@@ -168,7 +169,10 @@ class Voice(Singleton):
                 self.status['login'] = True  # login successful flag
                 e = self.__initial()
                 e.send(None)
-
+            except TimeoutException as e:   # 如果出现超时,就重试
+                time.sleep(1)
+                e = self.__login()
+                e.send(None)
             except NotOpenGoogle as e:  # 打不开谷歌
                 raise NotOpenGoogle('Can not open google, pleasw use VPN, you know...')
             except Exception as e:
@@ -218,26 +222,26 @@ class Voice(Singleton):
             yield
             if self.status['login']:
                 self.log.send(('initialization data...',))
-                self.__gc_data = self.__driver.execute_script('return %s' % self.__gc_data_name)
-                if self.__gc_data is None:  # 如果获取不到这个参数就回去重新获取 直到获取到为止
+                self._gc_data = self.__driver.execute_script('return %s' % self._gc_data_name)
+                if self._gc_data is None:  # 如果获取不到这个参数就回去重新获取 直到获取到为止
                     time.sleep(self.__try_time)
                     continue
                 # format url
                 self.__cookie_func(self.__driver.get_cookies())  # process cookie 处理 cookie
-                self.__send_msg_url = '{}/sms/send/'.format(self.__gc_data['baseUrl'])  # process send msg url
-                self.__call_url = '{}/call/connect/'.format(self.__gc_data['baseUrl'])  # 拨打电话的请求地址
-                self.__call_cancel_url = '{}/call/cancel/'.format(self.__gc_data['baseUrl'])  # 取消拨打电话的请求地址
-                self.__mark_url = '{}/inbox/mark/'.format(self.__gc_data['baseUrl'])  # 标记为已读的请求地址
-                self.__del_msg_url = '{}/inbox/deleteMessages/'.format(self.__gc_data['baseUrl'])  # 删除信息
-                self.__star_url = '{}/inbox/star/'.format(self.__gc_data['baseUrl'])  # 收藏信息
-                self.__dow_msg_url = '{}/inbox/recent/'.format(self.__gc_data['baseUrl'])  # 下载信息
-                self.__quick_add_url = '{}//phonebook/quickAdd/'.format(self.__gc_data['baseUrl'])
+                self._send_msg_url = '{}/sms/send/'.format(self._gc_data['baseUrl'])  # process send msg url
+                self.__call_url = '{}/call/connect/'.format(self._gc_data['baseUrl'])  # 拨打电话的请求地址
+                self.__call_cancel_url = '{}/call/cancel/'.format(self._gc_data['baseUrl'])  # 取消拨打电话的请求地址
+                self.__mark_url = '{}/inbox/mark/'.format(self._gc_data['baseUrl'])  # 标记为已读的请求地址
+                self.__del_msg_url = '{}/inbox/deleteMessages/'.format(self._gc_data['baseUrl'])  # 删除信息
+                self.__star_url = '{}/inbox/star/'.format(self._gc_data['baseUrl'])  # 收藏信息
+                self.__dow_msg_url = '{}/inbox/recent/'.format(self._gc_data['baseUrl'])  # 下载信息
+                self.__quick_add_url = '{}//phonebook/quickAdd/'.format(self._gc_data['baseUrl'])
                 self.__voicemail_ogg_str = '{0}/media/send_voicemail_ogg/{1}?read=0'
 
-                if len(self.__gc_data['phones']) > 1:  # 获取绑定的号码
-                    for k, v in self.__gc_data['phones'].items():
-                        if self.__gc_data['phones'][k]['name'] != 'Google Talk':
-                            self.__call_phone_for = self.__gc_data['phones'][k]
+                if len(self._gc_data['phones']) > 1:  # 获取绑定的号码
+                    for k, v in self._gc_data['phones'].items():
+                        if self._gc_data['phones'][k]['name'] != 'Google Talk':
+                            self.__call_phone_for = self._gc_data['phones'][k]
                             break
                             # 是否需要检测新消息
                 self.status['init'] = True  # 初始化完成
@@ -267,21 +271,21 @@ class Voice(Singleton):
 
         data = {'xpc': {'tp': None, 'osh': None, 'pru': 'https://www.google.com/voice/xpc/relay',
                         'ppu': 'https://www.google.com/voice/xpc/blank/',
-                        'lpu': '{}/voice/xpc/blank/'.format(self.__gc_data['xpcUrl'])}}
+                        'lpu': '{}/voice/xpc/blank/'.format(self._gc_data['xpcUrl'])}}
 
-        url = '{}/voice/xpc/'.format(self.__gc_data['xpcUrl'])
-        r = self.__requests(url, params=data)
+        url = '{}/voice/xpc/'.format(self._gc_data['xpcUrl'])
+        r = self._requests(url, params=data)
         par = re.findall("\'(.*?)\'", r.text)[0]
         self.log.send(('xpc: %s' % par,))
 
         # https://clientsx.google.com/voice/xpc/checkMessages?r=xxxxxxx
-        self.check_msg_url['url'] = '{0}/voice/xpc/checkMessages'.format(self.__gc_data['xpcUrl'])
+        self.check_msg_url['url'] = '{0}/voice/xpc/checkMessages'.format(self._gc_data['xpcUrl'])
         self.check_msg_url['par'] = {'r': par}
         self.status['check'] = True
 
         # 开启检测消息线程
         if self.status['auto']:
-            t = threading.Thread(target=self.__check_sms, args=(self.reply_sms,), name='check-new-sms')
+            t = threading.Thread(target=self._check_sms, args=(self.reply_sms,), name='check-new-sms')
             t.setDaemon(True)
             t.start()
 
@@ -307,9 +311,9 @@ class Voice(Singleton):
     def __headers(self):
         '''send post headers 请求头'''
         return {'host': 'www.google.com', 'user-agent': self.__user_agent,
-                'referer': self.__gc_data['baseUrl'], 'content-type': 'application/x-www-form-urlencoded;charset=UTF-8'}
+                'referer': self._gc_data['baseUrl'], 'content-type': 'application/x-www-form-urlencoded;charset=UTF-8'}
 
-    def __requests(self, url, params=None, data=None, method='get'):
+    def _requests(self, url, params=None, data=None, method='get'):
         '''
         requests uniform, code reuse  封装请求方法
         :param url: request url 请求的地址
@@ -327,6 +331,8 @@ class Voice(Singleton):
                 return r
             else:  # not support method #TODO img? 发送图片
                 pass
+        except AttributeError as e:
+            return None
         except OSError as e:  # 如果是本地测试出现这个报错要更换为全局代理
             raise ProxyError('please proxy global')
         except Exception as e:
@@ -339,19 +345,19 @@ class Voice(Singleton):
         :return dict
         '''
         if self.status['login'] and self.status['check']:
-            r = self.__requests(self.check_msg_url['url'], params=self.check_msg_url['par'])  # check...
+            r = self._requests(self.check_msg_url['url'], params=self.check_msg_url['par'])  # check...
             ret = r.json()
             return ret
         self.log.send((1, 'check msg not ready'))
 
-    def __check_sms(self, func):
+    def _check_sms(self, func):
         '''检测未读 sms, 并做出自定义的操作'''
         while self.status['login'] and self.status['check']:
             res = self.check_unread_msg()  # check sms...
             if res['data']['unreadCounts']['sms'] > 0:  # have ...
                 sms_list = self.unsms
                 for i in sms_list:
-                    if i['text'].strip().upper() in self.__match:
+                    if i['text'].strip().upper() in self._match:    # 匹配关键字
                         t = threading.Thread(target=func, args=(i,), name='reply sms')
                         t.setDaemon(True)
                         t.start()
@@ -365,7 +371,7 @@ class Voice(Singleton):
         :param data: 需要回复的 sms 的数据
         '''
         self.log.send(('ready reply sms',))
-        r = self.send_sms(data['number'], self.__match[data['text']])
+        r = self.send_sms(data['number'], self._match[data['text']])
         if r['ok']:
             self.log.send(('[success] reply sms to: %s' % data['number'],))
         else:
@@ -399,10 +405,10 @@ class Voice(Singleton):
         获取未读的 sms
         :return: dict
         '''
-        par = {'v': self.__gc_data['v']}  # token
+        par = {'v': self._gc_data['v']}  # token
         if self.status['login']:
             sms_list = []
-            r = self.__requests(self.__dow_msg_url, params=par)
+            r = self._requests(self.__dow_msg_url, params=par)
             data = self.__process_xml(r)
             msg_list = data['soup'].find_all(name='div', class_='gc-message-unread')  # 所有的未读短信消息
             # data = {'sms': [], 'voicemail': []}
@@ -411,10 +417,14 @@ class Voice(Singleton):
                 if 'gc-message-sms' in attr:  # sms
                     sms = {}
                     sms['id'] = msg['id']
-                    sms['number'] = msg.find(name='span', class_='gc-message-sms-from').text.strip()[
-                                    :-1]  # 去掉空格并切掉最后的冒号
+                    sms['number'] = msg.find(name='span', class_='gc-message-sms-from').text.strip()[:-1]  # 去掉空格并切掉最后的冒号
+                    # -----  处理时间  -----
+                    time_str = msg.find(name='span', class_='gc-message-sms-time').text.strip()
+                    local_time = time.strftime("%Y-%m-%d", time.localtime())
+                    sms_time_str = ''.join((local_time, ' ', time_str))
+                    sms_time = time.strptime(sms_time_str, '%Y-%m-%d %I:%M %p')
+                    sms['time'] = time.strftime("%Y-%m-%d %X", sms_time)
                     sms['text'] = msg.find(name='span', class_='gc-message-sms-text').text
-                    sms['time'] = msg.find(name='span', class_='gc-message-sms-time').text.strip()
                     self.log.send(('[sms] time: {0}; id:{1} .'.format(sms['time'], sms['id']),))
                     print(sms)
                     sms_list.append(sms)
@@ -426,10 +436,10 @@ class Voice(Singleton):
         所有的已读读短信消息
         :return: dict
         '''
-        par = {'v': self.__gc_data['v']}  # token
+        par = {'v': self._gc_data['v']}  # token
         if self.status['login']:
             sms_list = []
-            r = self.__requests(self.__dow_msg_url, params=par)
+            r = self._requests(self.__dow_msg_url, params=par)
             data = self.__process_xml(r)
             msg_list = data['soup'].select('div.gc-message-sms.gc-message-read')  # 所有的已读读短信消息
             # data = {'sms': [], 'voicemail': []}
@@ -438,8 +448,7 @@ class Voice(Singleton):
                 if 'gc-message-sms' in attr:  # sms
                     sms = {}
                     sms['id'] = msg['id']
-                    sms['number'] = msg.find(name='span', class_='gc-message-sms-from').text.strip()[
-                                    :-1]  # 去掉空格并切掉最后的冒号
+                    sms['number'] = msg.find(name='span', class_='gc-message-sms-from').text.strip()[:-1]  # 去掉空格并切掉最后的冒号
                     sms['text'] = msg.find(name='span', class_='gc-message-sms-text').text
                     sms['time'] = msg.find(name='span', class_='gc-message-sms-time').text.strip()
                     sms_list.append(sms)
@@ -451,10 +460,10 @@ class Voice(Singleton):
         获取未读的 voicemail, 包括文本和语音(下载url 地址)
         :return:
         '''
-        par = {'v': self.__gc_data['v']}  # token
+        par = {'v': self._gc_data['v']}  # token
         if self.status['login']:
             voice_list = []
-            r = self.__requests(self.__dow_msg_url, params=par)
+            r = self._requests(self.__dow_msg_url, params=par)
             data = self.__process_xml(r)
             msg_list = data['soup'].find_all(name='div', class_='gc-message-unread')  # 所有的未读语音消息
             for msg in msg_list:
@@ -466,7 +475,7 @@ class Voice(Singleton):
                 voicemail['number'] = msg.find(name='span', class_='gc-nobold').text
                 voicemail['time'] = msg.find(name='span', class_='gc-message-time').text
                 voicemail['text'] = msg.find(name='span', class_='gc-edited-trans-text').text
-                voicemail['ogg_url'] = self.__voicemail_ogg_str.format(self.__gc_data['baseUrl'], voicemail['id'])
+                voicemail['ogg_url'] = self.__voicemail_ogg_str.format(self._gc_data['baseUrl'], voicemail['id'])
 
                 if len(voicemail['text']) < 1:
                     voicemail['text'] = '[None] - please go to the website...'
@@ -480,7 +489,7 @@ class Voice(Singleton):
         :param url: voicemail 下载地址的url
         :return: r.content   二进制数据
         '''
-        r = self.__requests(url)
+        r = self._requests(url)
         return r.content
 
     def quick_add(self, name, number, phone_type=0):
@@ -495,9 +504,9 @@ class Voice(Singleton):
         if self.status['login']:
             data = {'phoneNumber': '+1%s' % number,
                     'phoneType': phone_type_dict[phone_type],
-                    '_rnr_se': self.__gc_data['_rnr_se'],
+                    '_rnr_se': self._gc_data['_rnr_se'],
                     'needsCheck': 1}
-            r = self.__requests(self.__quick_add_url, data=data, method='post')
+            r = self._requests(self.__quick_add_url, data=data, method='post')
             ret = r.json()
             if ret['ok']:
                 return ret
@@ -514,8 +523,8 @@ class Voice(Singleton):
         :return:
         '''
         if self.status['login']:
-            data = {'_rnr_se': self.__gc_data['_rnr_se'], 'messages': msg_id, 'read': read}
-            r = self.__requests(self.__mark_url, data=data, method='post')
+            data = {'_rnr_se': self._gc_data['_rnr_se'], 'messages': msg_id, 'read': read}
+            r = self._requests(self.__mark_url, data=data, method='post')
             ret = r.json()
             if ret['ok']:
                 return ret
@@ -527,8 +536,8 @@ class Voice(Singleton):
     def star(self, msg_id):
         ''' 把信息标记为收藏 '''
         if self.status['login']:
-            data = {'_rnr_se': self.__gc_data['_rnr_se'], 'messages': msg_id, 'star': 1}
-            r = self.__requests(self.__star_url, data=data, method='post')
+            data = {'_rnr_se': self._gc_data['_rnr_se'], 'messages': msg_id, 'star': 1}
+            r = self._requests(self.__star_url, data=data, method='post')
             ret = r.json()
             if ret['ok']:
                 return ret
@@ -540,8 +549,8 @@ class Voice(Singleton):
     def unstar(self, msg_id):
         ''' 把已经标记收藏的消息取消收藏标记 '''
         if self.status['login']:
-            data = {'_rnr_se': self.__gc_data['_rnr_se'], 'messages': msg_id, 'star': 0}
-            r = self.__requests(self.__star_url, data=data, method='post')
+            data = {'_rnr_se': self._gc_data['_rnr_se'], 'messages': msg_id, 'star': 0}
+            r = self._requests(self.__star_url, data=data, method='post')
             ret = r.json()
             if ret['ok']:
                 return ret
@@ -553,8 +562,8 @@ class Voice(Singleton):
     def del_msg(self, msg_id):
         ''' 删除信息 '''
         if self.status['login']:
-            data = {'_rnr_se': self.__gc_data['_rnr_se'], 'messages': msg_id, 'trash': 1}
-            r = self.__requests(self.__del_msg_url, data=data, method='post')
+            data = {'_rnr_se': self._gc_data['_rnr_se'], 'messages': msg_id, 'trash': 1}
+            r = self._requests(self.__del_msg_url, data=data, method='post')
             ret = r.json()
             if ret['ok']:
                 return ret
@@ -577,8 +586,8 @@ class Voice(Singleton):
         if self.status['login']:
             # 数据格式
             msg = {'id': None, 'phoneNumber': number, 'text': text, 'sendErrorSms': 0,
-                   '_rnr_se': self.__gc_data['_rnr_se']}
-            r = self.__requests(self.__send_msg_url, method='post', data=msg)  # post sms
+                   '_rnr_se': self._gc_data['_rnr_se']}
+            r = self._requests(self._send_msg_url, method='post', data=msg)  # post sms
             ret = r.json()
             if ret['ok']:
                 return ret
@@ -596,11 +605,11 @@ class Voice(Singleton):
         if self.status['login']:
             # 数据格式
             data = {'outgoingNumber': number, 'remember': 0, 'phoneType': self.__call_phone_for['type'],
-                    'subscriberNumber': self.__gc_data['number']['raw'],
+                    'subscriberNumber': self._gc_data['number']['raw'],
                     'forwardingNumber': self.__call_phone_for['phoneNumber'],
-                    '_rnr_se': self.__gc_data['_rnr_se']}
+                    '_rnr_se': self._gc_data['_rnr_se']}
 
-            r = self.__requests(self.__call_url, data=data, method='post')  # 拨打
+            r = self._requests(self.__call_url, data=data, method='post')  # 拨打
             ret = r.json()
             if ret['ok']:
                 return ret
@@ -620,9 +629,9 @@ class Voice(Singleton):
             data = {'outgoingNumber': None,
                     'forwardingNumber': None,
                     'cancelType': 'C2C',
-                    '_rnr_se': self.__gc_data['_rnr_se'],
+                    '_rnr_se': self._gc_data['_rnr_se'],
                     'callId': call_id}
-            r = self.__requests(self.__call_cancel_url, data=data, method='post')
+            r = self._requests(self.__call_cancel_url, data=data, method='post')
             return r.json()  # {"ok" : false}
         return
 
@@ -647,14 +656,13 @@ class Voice(Singleton):
 
     def set_match(self, data):
         '''设置匹配关键字,字典格式'''
-        self.__match = data
+        self._match = data
 
     def __createInstance(self, module_name, class_name, *args, **kwargs):
         '''
         create user input browser object 动态导入浏览器浏览器类型模块
         :return: object
         '''
-        from selenium import webdriver
 
         headers = {'Accept': '*/*',
                    'Accept-Encoding': 'gzip, deflate, sdch',
@@ -706,7 +714,7 @@ class Voice(Singleton):
         if sleep:
             time.sleep(sleep)
         try:
-            driver.save_screenshot("./%s.png" % (time.strftime("%Y-%m-%d %X", time.localtime())))
+            driver.save_screenshot("./img/%s.png" % (time.strftime("%Y-%m-%d %X", time.localtime())))
         except Exception:
             pass
 
@@ -716,5 +724,5 @@ class Voice(Singleton):
 
     def __del__(self):
         ''' 退出模拟的浏览器 quit driver'''
-        if isinstance(self.driver, type(None)):
+        if not isinstance(self.driver, type(None)):
             self.driver.quit()
