@@ -107,6 +107,4 @@ ENV/
 img/*.png
 
 # test py file
-test.py
-alpine
-Docker
+#test.py
