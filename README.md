@@ -22,7 +22,7 @@
 - `pip install BeautifulSoup`
 - `PhantomJS` 一款无界面模拟浏览器, 不同的操作系统安装方法有差异
 
-### 2018/11/11
+### 封装 Docker 2018/11/11
 封装到 docker， 并每周向指定号码发送信息
 
 在`Dockerfile`中`GV_USR`和`GV_PWD`填入自己的邮箱和密码，然后访问`ip:3280/sms/13212969527/gv:0.1`成功后会返回数据。
