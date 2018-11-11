@@ -244,6 +244,7 @@ class Voice(Singleton):
                             self.__call_phone_for = self._gc_data['phones'][k]
                             break
                             # 是否需要检测新消息
+                self.driver.quit()
                 self.status['init'] = True  # 初始化完成
                 # 开启守护线程
                 t = threading.Thread(target=self.__guard, name='Guard')
