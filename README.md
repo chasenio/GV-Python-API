@@ -5,10 +5,10 @@
 
 ```sh
 # run
-docker run -d -p 3280:5000 -e "GVAPI_IS_DEV=true" -e "GV_USR=<your email>" -e "GV_PWD=<your passwd>" --restart always cvno/gv
+docker run -d -p 3280:5000 -e "GV_USR=<your email>" -e "GV_PWD=<your passwd>" -e "GVAPI_IS_DEV=true" --restart always cvno/gv
 ```
 
-在`Dockerfile`中`GV_USR`和`GV_PWD`填入自己的邮箱和密码，然后访问`ip:3280/sms/13212969527/gv:0.1`成功后会返回数据。
+在指令中`GV_USR`和`GV_PWD`填入自己的邮箱和密码，稍等片刻后访问`ip:3280/sms/13212969527/gv:0.1`成功后会返回数据。
 
 `ip:3280/sms/13212969527/gv:0.1`向`13212969527`这个号码发送`sms`信息，内容为`gv:0.1`
 
