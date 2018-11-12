@@ -1,3 +1,24 @@
+使`Google Voice`号码免于被回收
+
+### 封装 Docker 2018/11/11
+封装到 docker， 并每周向指定号码发送信息
+
+```sh
+# run
+docker run -d -p 3280:5000 -e "GVAPI_IS_DEV=true" -e "GV_USR=<your email>" -e "GV_PWD=<your passwd>" --restart always cvno/gv
+```
+
+在`Dockerfile`中`GV_USR`和`GV_PWD`填入自己的邮箱和密码，然后访问`ip:3280/sms/13212969527/gv:0.1`成功后会返回数据。
+
+`ip:3280/sms/13212969527/gv:0.1`向`13212969527`这个号码发送`sms`信息，内容为`gv:0.1`
+
+```sh
+# 自行build
+docker build -t <your id>/gv:0.1 .
+```
+
+**注意：**自行`build`后如果要上传一定要把`docker`仓库设置为私有！！！否则任何人都可以看到你的镜像将暴露你的帐号密码。
+
 # GV Python API
 
 使用 Python3 来操作 Google Voice 的 API。[English](/en)（未完成）
@@ -13,7 +34,7 @@
 - 根据 SMS 的设置自动回复
 
 
-它也可能是一个廉价的短信验证码方法，目前国内至少有两家大型的互联网公司使用这种方案。
+它也可能是一个廉价的短信验证码方案。
 
 **依赖模块:**
 
@@ -21,23 +42,6 @@
 - `pip install requests`
 - `pip install BeautifulSoup`
 - `PhantomJS` 一款无界面模拟浏览器, 不同的操作系统安装方法有差异
-
----
-### 封装 Docker 2018/11/11
-封装到 docker， 并每周向指定号码发送信息
-
-在`Dockerfile`中`GV_USR`和`GV_PWD`填入自己的邮箱和密码，然后访问`ip:3280/sms/13212969527/gv:0.1`成功后会返回数据。
-
-``ip:3280/sms/13212969527/gv:0.1`` 向`13212969527`这个号码发送`sms`信息，内容为`gv:0.1`
-
-**声明**`build`后如果要上传一定要把`docker`仓库设置为私有！！！否则任何人都可以看到你的镜像盗取你的帐号密码。
-
-```
-# 自行build
-docker build -t <your id>/gv:0.1 .
-# 部署
-docker run -d -p 3280:5000 -e "GVAPI_IS_DEV=true" --restart always <your id>/gv:0.1
-```
 
 # 开发使用
 
