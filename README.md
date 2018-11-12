@@ -22,6 +22,7 @@
 - `pip install BeautifulSoup`
 - `PhantomJS` 一款无界面模拟浏览器, 不同的操作系统安装方法有差异
 
+---
 ### 封装 Docker 2018/11/11
 封装到 docker， 并每周向指定号码发送信息
 
