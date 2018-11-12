@@ -17,7 +17,7 @@ docker run -d -p 3280:5000 -e "GVAPI_IS_DEV=true" -e "GV_USR=<your email>" -e "G
 docker build -t <your id>/gv:0.1 .
 ```
 
-**注意：**自行`build`后如果要上传一定要把`docker`仓库设置为私有！！！否则任何人都可以看到你的镜像将暴露你的帐号密码。
+**注意**:自行`build`后如果要上传一定要把`docker`仓库设置为私有！！！否则任何人都可以看到你的镜像将暴露你的帐号密码。
 
 # GV Python API
 
