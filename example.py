@@ -2,7 +2,7 @@
 # -* coding: utf-8 -*
 # create by cvno on 2018/1/15 11:52
 
-import GoogleVoice
+from gvapi import GoogleVoice
 
 
 # 如果需要设置自定义回复，请重写 _initial 方法，不需要的请忽略

@@ -7,7 +7,7 @@ import time
 from flask import Flask
 from threading import Timer
 from datetime import datetime
-from GoogleVoice import Voice
+from gvapi import Voice
 
 
 app = Flask(__name__)
@@ -25,7 +25,7 @@ def sms(number, content):
     # 发送 sms
     res = voice.send_sms(number, content)
     data = {'number': number,'content': content, 'res': res}
-    return json.dumps(data, ensure_ascii=Flask)
+    return json.dumps(data, ensure_ascii=False)
 
 
 class Scheduler(object):

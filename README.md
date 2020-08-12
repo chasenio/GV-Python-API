@@ -1,4 +1,18 @@
-使`Google Voice`号码免于被回收
+# 20200807 不再维护
+>为了帮助保护您的帐号，Google 不允许您通过某些浏览器登录。Google 可能会阻止从存在以下情况的浏览器登录：
+
+- 不支持 JavaScript 或者已关闭 JavaScript。
+- 添加了不安全或不受支持的扩展程序。
+- **使用自动化测试框架**。
+- 嵌入在其他应用中。
+
+详情查看： [here](https://support.google.com/accounts/answer/7675428?hl=zh-Hans)
+仅作为学习用途
+```shell script
+python setup.py sdist bdist_wheel # 打包成wheel
+```
+
+~~使`Google Voice`号码免于被回收~~
 
 ### 封装 Docker 2018/11/11
 封装到 docker， 并每周向指定号码发送信息
@@ -34,23 +48,19 @@ docker build -t <your id>/gv:0.1 .
 - 根据 SMS 的设置自动回复
 
 
-它也可能是一个廉价的短信验证码方案。
+~~它也可能是一个廉价的短信验证码方案。~~
 
-**依赖模块:**
-
-- `pip install selenium`
-- `pip install requests`
-- `pip install BeautifulSoup`
-- `PhantomJS` 一款无界面模拟浏览器, 不同的操作系统安装方法有差异
+**依赖:**
+- 浏览器 [PhantomJS](http://phantomjs.org/download.html) | [geckodriver](https://github.com/mozilla/geckodriver) | [chromedriver](https://chromedriver.chromium.org/)
 
 # 开发使用
 
 ```python
-import GoogleVoice
+from gvapi import Voice
 
 
 # 如果需要设置自定义回复，请重写 _initial 方法，不需要的请忽略
-class Example(GoogleVoice.Voice):
+class Example(Voice):
     def _initial(self):
         ''' 这个函数运行在登录之前, 可以在这里修改一些配置,
          如:
@@ -101,7 +111,5 @@ for i in voice.voicemail:  # 这个方法返回的是一个 list
 如果 Google 更改登录机制，或弃用旧版，本代码可能会不支持，如果你下载此代码，代表您同意自行承担使用风险。
 
 # 许可
-by [Git @cvno](https://github.com/cvno/) [cvno.me](https:blog.cvno.me)
-
+by [Git @kentio](https://github.com/kentio/)
 See LICENSE
-

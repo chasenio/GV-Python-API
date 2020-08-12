@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -* coding: utf-8 -*
-# create by git@cvno on 2018/1/2 10:23
+# create by git@kentio on 2018/1/2 10:23
 import re
 import ssl
 import time
@@ -688,8 +688,10 @@ class Voice(Singleton):
         :return obj
         '''
         from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-
-        dcap = dict(DesiredCapabilities.PHANTOMJS)
+        dcap_lib = getattr(DesiredCapabilities, self.__browser_name.upper())
+        if not dcap_lib:
+            raise
+        dcap = dict(dcap_lib)
         dcap["phantomjs.page.settings.userAgent"] = (self.__user_agent)  # 设置 userAgent
 
         driver = self.__createInstance(self.__module, self.__browser_name,
